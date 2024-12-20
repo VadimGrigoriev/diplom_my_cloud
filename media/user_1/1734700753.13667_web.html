@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Orders Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'custom-blue': '#4945FF',
+                        'custom-gray': '#F6F6F9',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-custom-gray">
+    <div class="container mx-auto p-4">
+        <header class="flex justify-between items-center mb-6">
+            <div class="flex items-center">
+                <div class="w-8 h-8 bg-custom-blue rounded-lg mr-2 flex items-center justify-center text-white font-bold">U</div>
+                <h1 class="text-xl font-semibold text-gray-800">Sales orders</h1>
+            </div>
+            <div class="flex items-center">
+                <div class="relative mr-4">
+                    <input type="text" placeholder="Search" class="border border-gray-300 rounded-md px-3 py-2 pl-8 w-64">
+                    <svg class="w-4 h-4 absolute left-2 top-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
+                <select class="border border-gray-300 rounded-md px-3 py-2 mr-4 bg-white">
+                    <option>All</option>
+                </select>
+                <div class="w-8 h-8 bg-gray-300 rounded-full mr-2"></div>
+                <div class="w-8 h-8 bg-gray-200 rounded-full relative">
+                    <span class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 text-xs flex items-center justify-center">2</span>
+                </div>
+            </div>
+        </header>
+        
+        <nav class="flex mb-6 text-sm">
+            <button class="bg-custom-blue text-white px-4 py-2 rounded-md mr-2 font-medium">All orders <span class="bg-indigo-700 px-2 py-0.5 rounded-full ml-1">74</span></button>
+            <button class="bg-white text-gray-700 px-4 py-2 rounded-md mr-2 font-medium">Active <span class="bg-gray-200 px-2 py-0.5 rounded-full ml-1">21</span></button>
+            <button class="bg-white text-gray-700 px-4 py-2 rounded-md mr-2 font-medium">To invoice <span class="bg-gray-200 px-2 py-0.5 rounded-full ml-1">18</span></button>
+            <button class="bg-white text-gray-700 px-4 py-2 rounded-md font-medium">To ship <span class="bg-gray-200 px-2 py-0.5 rounded-full ml-1">36</span></button>
+        </nav>
+        
+        <div class="bg-white rounded-lg shadow">
+            <div class="flex justify-between items-center p-4 border-b">
+                <div class="flex items-center text-gray-600">
+                    <button class="mr-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg></button>
+                    <span>Filter sales orders</span>
+                </div>
+                <button class="bg-custom-blue text-white px-4 py-2 rounded-md text-sm font-medium">+ New sales order</button>
+            </div>
+            
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="text-left p-4 font-medium text-gray-500">Order #</th>
+                        <th class="text-left p-4 font-medium text-gray-500">Company name</th>
+                        <th class="text-left p-4 font-medium text-gray-500">Status</th>
+                        <th class="text-left p-4 font-medium text-gray-500">Total</th>
+                        <th class="text-left p-4 font-medium text-gray-500">Created</th>
+                        <th class="text-left p-4 font-medium text-gray-500">Last updated</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="border-b">
+                        <td class="p-4 font-medium text-custom-blue">#SO-00003</td>
+                        <td class="p-4">Gaspar Antunes</td>
+                        <td class="p-4"><span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">FULFILLED</span></td>
+                        <td class="p-4">2 674,56 $</td>
+                        <td class="p-4 text-gray-500">May 10, 2019</td>
+                        <td class="p-4 text-gray-500">Today</td>
+                        <td class="p-4 text-gray-400">•••</td>
+                    </tr>
+                    <tr class="border-b bg-blue-50">
+                        <td class="p-4 font-medium text-custom-blue">#SO-00004</td>
+                        <td class="p-4">Trienke van Aartsen</td>
+                        <td class="p-4"><span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">CONFIRMED</span></td>
+                        <td class="p-4">1 478,48 $</td>
+                        <td class="p-4 text-gray-500">May 12, 2019</td>
+                        <td class="p-4 text-gray-500">Yesterday</td>
+                        <td class="p-4 text-gray-400">•••</td>
+                    </tr>
+                    <!-- Add more rows here -->
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white rounded-full py-2 px-4 flex items-center text-sm shadow-lg" style="display: none;">
+            <span class="mr-4 font-medium">3 items selected</span>
+            <button class="mr-3 font-medium">More</button>
+            <button class="mr-3 font-medium">Send</button>
+            <button class="mr-3 font-medium">Print</button>
+            <button class="mr-3 font-medium">Edit</button>
+            <button class="bg-red-500 px-3 py-1 rounded-md font-medium">Delete</button>
+        </div>
+    </div>
+</body>
+</html>

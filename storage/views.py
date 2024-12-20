@@ -6,14 +6,25 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAdminUser
 from rest_framework import status
 from .models import CustomUser, File
-from .serializers import UserSerializer, RegisterSerializer, FileSerializer, AdminUserSerializer
+from .serializers import (
+    UserSerializer,
+    RegisterSerializer,
+    FileSerializer,
+    AdminUserSerializer,
+    CustomTokenObtainPairSerializer
+)
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
+from rest_framework_simplejwt.views import TokenObtainPairView
 from django.utils.timezone import now
 from django.conf import settings
 from django.http import FileResponse
 from pathlib import Path
 import os
+
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
 
 
 class UserViewSet(ModelViewSet):
@@ -26,8 +37,24 @@ class RegisterView(APIView):
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
-            return Response({'message': 'User registered successfully'}, status=status.HTTP_201_CREATED)
+            # проверка уникальности имени пользователя и email
+            if CustomUser.objects.filter(username=serializer.validated_data['username']).exists():
+                return Response({'error': 'Имя пользователя уже занято'}, status=status.HTTP_400_BAD_REQUEST)
+            if CustomUser.objects.filter(email=serializer.validated_data['email']).exists():
+                return Response({'error': 'Email уже используется'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Создание пользователя
+            user = serializer.save()
+            return Response({
+                'message': 'Пользователь успешно зарегистрирован',
+                'user': {
+                    'username': user.username,
+                    'email': user.email,
+                    'full_name': user.full_name,
+                }
+            }, status=status.HTTP_201_CREATED)
+
+        # Возвращаем ошибки валидации
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -35,6 +62,10 @@ class FileViewSet(ModelViewSet):
     queryset = File.objects.all()
     serializer_class = FileSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # Фильтруем файлы только для текущего пользователя
+        return File.objects.filter(user=self.request.user)
 
     def get_serializer_context(self):
         # Передаем текущий запрос в контекст сериализотора

@@ -4,7 +4,7 @@ from django.conf import settings
 
 
 class CustomUser(AbstractUser):
-    full_name = models.CharField(max_length=350, verbose_name="Полное имя")
+    full_name = models.CharField(max_length=350, blank=True, null=True, verbose_name="Полное имя")
     is_admin = models.BooleanField(default=False, verbose_name="Администратор")
 
     def __str__(self):

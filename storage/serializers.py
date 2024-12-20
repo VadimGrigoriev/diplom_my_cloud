@@ -5,7 +5,16 @@ from django.utils.timezone import now
 from django.conf import settings
 from pathlib import Path
 from django.db.models import Sum
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 import os
+
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        token['username'] = user.username  # Добавляем username
+        return token
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -32,14 +41,24 @@ class AdminUserSerializer(serializers.ModelSerializer):
 
 
 class RegisterSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, min_length=6)
     class Meta:
         model = CustomUser
         fields = ['username', 'password', 'email', 'full_name']
-        extra_kwargs = {'password': {'write_only': True}}
+        extra_kwargs = {
+            'full_name': {'required': False},
+            'password': {'write_only': True}
+        }
 
     def create(self, validated_data):
-        validated_data['password'] = make_password(validated_data['password'])
-        return super().create(validated_data)
+        full_name = validated_data.pop('full_name', '')  # Получаем full_name или пустую строку
+        user = CustomUser.objects.create_user(
+            username=validated_data['username'],
+            email=validated_data['email'],
+            password=validated_data['password'],
+            full_name=full_name
+        )
+        return user
 
 
 class FileSerializer(serializers.ModelSerializer):
