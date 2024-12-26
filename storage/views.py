@@ -1,22 +1,22 @@
-from django.shortcuts import render
-from rest_framework.exceptions import ValidationError
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
-from rest_framework.permissions import IsAdminUser
+from rest_framework.permissions import IsAdminUser, AllowAny
 from rest_framework import status
-from .models import CustomUser, File
+from .models import CustomUser, File, FileToken
 from .serializers import (
     UserSerializer,
     RegisterSerializer,
     FileSerializer,
     AdminUserSerializer,
-    CustomTokenObtainPairSerializer
+    CustomTokenObtainPairSerializer,
+    FileTokenSerializer
 )
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework_simplejwt.views import TokenObtainPairView
-from django.utils.timezone import now
+from django.utils.timezone import now, timedelta
+from django.core.exceptions import ObjectDoesNotExist
 from django.conf import settings
 from django.http import FileResponse
 from pathlib import Path
@@ -39,7 +39,7 @@ class RegisterView(APIView):
         if serializer.is_valid():
             # проверка уникальности имени пользователя и email
             if CustomUser.objects.filter(username=serializer.validated_data['username']).exists():
-                return Response({'error': 'Имя пользователя уже занято'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'error': 'Логин уже занят'}, status=status.HTTP_400_BAD_REQUEST)
             if CustomUser.objects.filter(email=serializer.validated_data['email']).exists():
                 return Response({'error': 'Email уже используется'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -145,6 +145,45 @@ class FileViewSet(ModelViewSet):
         response = FileResponse(file_path.open('rb'), as_attachment=True)
         response['Content-Disposition'] = f"attachment; filename*=UTF-8''{file_instance.original_name}"
         return response
+
+    @action(detail=True, methods=['post'], url_path='generate-token')
+    def generate_token(self, request, pk=None):
+        """Генерация временной ссылки"""
+        file_instance = self.get_object()
+        user = request.user
+        expires_at = now() + timedelta(minutes=10)  # Срок действия токена 10 минут
+
+        token = FileToken.objects.create(
+            file=file_instance,
+            user=user,
+            expires_at=expires_at
+        )
+
+        serializer = FileTokenSerializer(token, context={'request': request})  # Передаем request в контекст
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=['get'], url_path='download-temp/(?P<token>[^/]+)', permission_classes=[AllowAny])
+    def download_temp(self, request, token=None):
+        """Скачивание файла по временной ссылке без авторизации"""
+        try:
+            token_instance = FileToken.objects.get(token=token)
+            if not token_instance.is_valid():
+                return Response({"error": "Срок действия ссылки истек."}, status=status.HTTP_400_BAD_REQUEST)
+
+            file_instance = token_instance.file
+            file_path = Path(settings.MEDIA_ROOT) / file_instance.unique_name
+
+            if not file_path.exists():
+                return Response({"error": "Файл не найден"}, status=status.HTTP_404_NOT_FOUND)
+
+            # Формируем ответ с файлом
+            response = FileResponse(file_path.open('rb'), as_attachment=True)
+            response['Content-Disposition'] = f"attachment; filename*=UTF-8''{file_instance.original_name}"
+            return response
+        except FileToken.DoesNotExist:
+            return Response({"error": "Токен недействителен или не существует."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class AdminUserViewSet(ModelViewSet):

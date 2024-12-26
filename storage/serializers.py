@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import CustomUser, File
+from .models import CustomUser, File, FileToken
 from django.contrib.auth.hashers import make_password
 from django.utils.timezone import now
 from django.conf import settings
@@ -46,7 +46,6 @@ class RegisterSerializer(serializers.ModelSerializer):
         model = CustomUser
         fields = ['username', 'password', 'email', 'full_name']
         extra_kwargs = {
-            'full_name': {'required': False},
             'password': {'write_only': True}
         }
 
@@ -97,4 +96,19 @@ class FileSerializer(serializers.ModelSerializer):
             size=uploaded_file.size,
             **validated_data
         )
+
+
+class FileTokenSerializer(serializers.ModelSerializer):
+    download_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = FileToken
+        fields = ['token', 'expires_at', 'download_url']
+
+    def get_download_url(self, obj):
+        request = self.context.get('request')
+        if request:
+            return request.build_absolute_uri(f"/api/files/download-temp/{obj.token}/")
+        return None
+
 
