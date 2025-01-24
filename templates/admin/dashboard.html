@@ -1,0 +1,12 @@
+{% extends "admin/change_list.html" %}
+
+{% block content %}
+  <h1>{{ title }}</h1>
+  <div>
+    <p><strong>Всего пользователей:</strong> {{ total_users }}</p>
+    <p><strong>Всего файлов:</strong> {{ total_files }}</p>
+    <p><strong>Общий объем файлов:</strong> {{ total_size }}</p>
+  </div>
+  <hr>
+  {{ block.super }}  {# Включаем стандартную таблицу файлов #}
+{% endblock %}

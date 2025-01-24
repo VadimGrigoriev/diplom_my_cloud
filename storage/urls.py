@@ -5,12 +5,15 @@ from .views import (
     RegisterView,
     FileViewSet,
     AdminUserViewSet,
-    CustomTokenObtainPairView
+    CustomTokenObtainPairView,
+    VerifyUserView,
+    ResetPasswordView
 )
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
+
 
 router = DefaultRouter()
 
@@ -25,5 +28,6 @@ urlpatterns = [
     path('api/token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
-
+    path("api/auth/verify-user/", VerifyUserView.as_view(), name="verify_user"),
+    path("api/auth/reset-password/", ResetPasswordView.as_view(), name="reset_password"),
 ]

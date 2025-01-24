@@ -1,3 +1,4 @@
+from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
@@ -16,7 +17,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.utils.timezone import now, timedelta
-from django.core.exceptions import ObjectDoesNotExist
+from django.contrib.auth.hashers import make_password
 from django.conf import settings
 from django.http import FileResponse
 from pathlib import Path
@@ -141,6 +142,10 @@ class FileViewSet(ModelViewSet):
         if not file_path.exists():
             return Response({"error": "Файл не найден"}, status=status.HTTP_404_NOT_FOUND)
 
+        # Обновляем дату последнего скачивания
+        file_instance.last_downloaded = now()
+        file_instance.save()
+
         # Устанавливаем корректный заголовок Content-Disposition
         response = FileResponse(file_path.open('rb'), as_attachment=True)
         response['Content-Disposition'] = f"attachment; filename*=UTF-8''{file_instance.original_name}"
@@ -176,6 +181,10 @@ class FileViewSet(ModelViewSet):
             if not file_path.exists():
                 return Response({"error": "Файл не найден"}, status=status.HTTP_404_NOT_FOUND)
 
+            # Обновляем дату последнего скачивания
+            file_instance.last_downloaded = now()
+            file_instance.save()
+
             # Формируем ответ с файлом
             response = FileResponse(file_path.open('rb'), as_attachment=True)
             response['Content-Disposition'] = f"attachment; filename*=UTF-8''{file_instance.original_name}"
@@ -201,3 +210,47 @@ class AdminUserViewSet(ModelViewSet):
         user.save()
         return Response({'message': 'Роль обновлена', 'is_admin': user.is_superuser})
     
+
+class VerifyUserView(APIView):
+    """Проверяет username и full_name перед сменой пароля."""
+
+    def post(self, request):
+        username = request.data.get("username")
+        full_name = request.data.get("full_name", "").strip()
+
+        if not username:
+            return Response({"error": "Поле 'username' обязательно."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = CustomUser.objects.get(username=username)
+
+            # Если full_name задан, проверяем его совпадение
+            if full_name and user.full_name != full_name:
+                return Response({"error": "Полное имя не совпадает."}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Данные пользователя корректны
+            return Response({"success": True}, status=status.HTTP_200_OK)
+
+        except CustomUser.DoesNotExist:
+            return Response({"error": "Пользователь с таким username не найден."}, status=status.HTTP_404_NOT_FOUND)
+
+
+class ResetPasswordView(APIView):
+    """Меняет пароль пользователя."""
+
+    def post(self, request):
+        username = request.data.get("username")
+        new_password = request.data.get("new_password")
+
+        if not username or not new_password:
+            return Response({"error": "Необходимо указать 'username' и 'new_password'."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = CustomUser.objects.get(username=username)
+            user.password = make_password(new_password)  # Хешируем новый пароль
+            user.save()
+
+            return Response({"message": "Пароль успешно изменён."}, status=status.HTTP_200_OK)
+
+        except CustomUser.DoesNotExist:
+            return Response({"error": "Пользователь с таким username не найден."}, status=status.HTTP_404_NOT_FOUND)

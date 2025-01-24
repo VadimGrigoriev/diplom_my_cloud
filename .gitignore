@@ -12,6 +12,8 @@ env/
 venv/
 .venv/
 
+media/
+
 ### Project specific ###
 settings_local.py
 
