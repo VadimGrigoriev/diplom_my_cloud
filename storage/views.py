@@ -21,6 +21,7 @@ from django.contrib.auth.hashers import make_password
 from django.conf import settings
 from django.http import FileResponse
 from pathlib import Path
+from urllib.parse import quote
 import os
 
 
@@ -146,9 +147,12 @@ class FileViewSet(ModelViewSet):
         file_instance.last_downloaded = now()
         file_instance.save()
 
+        # Кодируем имя файла для корректного отображения в браузере
+        encoded_filename = quote(file_instance.original_name)
+
         # Устанавливаем корректный заголовок Content-Disposition
         response = FileResponse(file_path.open('rb'), as_attachment=True)
-        response['Content-Disposition'] = f"attachment; filename*=UTF-8''{file_instance.original_name}"
+        response['Content-Disposition'] = f"attachment; filename*=UTF-8''{encoded_filename}"
         return response
 
     @action(detail=True, methods=['post'], url_path='generate-token')
@@ -185,9 +189,12 @@ class FileViewSet(ModelViewSet):
             file_instance.last_downloaded = now()
             file_instance.save()
 
+            # Кодируем имя файла для корректного отображения в браузере
+            encoded_filename = quote(file_instance.original_name)
+
             # Формируем ответ с файлом
             response = FileResponse(file_path.open('rb'), as_attachment=True)
-            response['Content-Disposition'] = f"attachment; filename*=UTF-8''{file_instance.original_name}"
+            response['Content-Disposition'] = f"attachment; filename*=UTF-8''{encoded_filename}"
             return response
         except FileToken.DoesNotExist:
             return Response({"error": "Токен недействителен или не существует."}, status=status.HTTP_404_NOT_FOUND)
