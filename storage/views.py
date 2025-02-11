@@ -2,19 +2,18 @@ from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
-from rest_framework.permissions import IsAdminUser, AllowAny
+from rest_framework.permissions import AllowAny
 from rest_framework import status
 from .models import CustomUser, File, FileToken
 from .serializers import (
     UserSerializer,
     RegisterSerializer,
     FileSerializer,
-    AdminUserSerializer,
     CustomTokenObtainPairSerializer,
     FileTokenSerializer
 )
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.utils.timezone import now, timedelta
 from django.contrib.auth.hashers import make_password
@@ -39,7 +38,7 @@ class RegisterView(APIView):
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
-            # проверка уникальности имени пользователя и email
+            # Проверка уникальности имени пользователя и email
             if CustomUser.objects.filter(username=serializer.validated_data['username']).exists():
                 return Response({'error': 'Логин уже занят'}, status=status.HTTP_400_BAD_REQUEST)
             if CustomUser.objects.filter(email=serializer.validated_data['email']).exists():
@@ -80,13 +79,20 @@ class FileViewSet(ModelViewSet):
         if not files:
             return Response({"error": "Файлы не предоставлены."}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Получаем комментарии из запроса
+        comments = {}
+        for key, value in request.POST.items():
+            if key.startswith('comments[') and key.endswith(']'):
+                index = int(key[9:-1])  # Извлекаем индекс из 'comments[0]'
+                comments[index] = value
+
         # Создание папки пользователя
         user_folder = os.path.join(settings.MEDIA_ROOT, f"user_{request.user.id}")
         os.makedirs(user_folder, exist_ok=True)
 
         # Обработка каждого файла
         created_files = []
-        for uploaded_file in files:
+        for index, uploaded_file in enumerate(files):
             unique_name = f"{now().timestamp()}_{uploaded_file.name}"
             file_path = os.path.join(user_folder, unique_name)
 
@@ -101,6 +107,7 @@ class FileViewSet(ModelViewSet):
                 original_name=uploaded_file.name,
                 unique_name=os.path.join(f"user_{request.user.id}", unique_name),
                 size=uploaded_file.size,
+                comment=comments.get(index, '')  # Добавляем комментарий, если он есть
             )
             created_files.append(file_instance)
 
@@ -202,22 +209,6 @@ class FileViewSet(ModelViewSet):
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class AdminUserViewSet(ModelViewSet):
-    queryset = CustomUser.objects.all()
-    serializer_class = AdminUserSerializer
-    permission_classes = [IsAdminUser]  # Доступ только администраторам
-
-    @action(detail=True, methods=['patch'], url_path='set-admin')
-    def set_admin(self, request, pk=None):
-        """Назначение/снятие роли администратора"""
-        user = self.get_object()
-        is_admin = request.data.get('is_admin', False)
-
-        user.is_superuser = is_admin
-        user.save()
-        return Response({'message': 'Роль обновлена', 'is_admin': user.is_superuser})
-    
-
 class VerifyUserView(APIView):
     """Проверяет username и full_name перед сменой пароля."""
 
@@ -261,3 +252,11 @@ class ResetPasswordView(APIView):
 
         except CustomUser.DoesNotExist:
             return Response({"error": "Пользователь с таким username не найден."}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_current_user(request):
+    """Возвращает информацию о текущем пользователе"""
+    serializer = UserSerializer(request.user)
+    return Response(serializer.data)

@@ -4,13 +4,12 @@ from .views import (
     UserViewSet,
     RegisterView,
     FileViewSet,
-    AdminUserViewSet,
     CustomTokenObtainPairView,
     VerifyUserView,
-    ResetPasswordView
+    ResetPasswordView,
+    get_current_user
 )
 from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
     TokenRefreshView,
 )
 
@@ -18,7 +17,6 @@ from rest_framework_simplejwt.views import (
 router = DefaultRouter()
 
 router.register(r'users', UserViewSet, basename='user')
-router.register(r'admin/users', AdminUserViewSet, basename='admin-user')
 router.register(r'files', FileViewSet, basename='file')
 
 urlpatterns = [
@@ -30,4 +28,6 @@ urlpatterns = [
 
     path("api/auth/verify-user/", VerifyUserView.as_view(), name="verify_user"),
     path("api/auth/reset-password/", ResetPasswordView.as_view(), name="reset_password"),
+
+    path('api/auth/me/', get_current_user, name='auth-me'),
 ]

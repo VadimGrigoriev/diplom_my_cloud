@@ -1,12 +1,9 @@
 from rest_framework import serializers
 from .models import CustomUser, File, FileToken
-from django.contrib.auth.hashers import make_password
 from django.utils.timezone import now
 from django.conf import settings
 from pathlib import Path
-from django.db.models import Sum
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-import os
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -24,20 +21,13 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class AdminUserSerializer(serializers.ModelSerializer):
-    is_admin = serializers.BooleanField(source='is_superuser')  # Для работы с флагом администратора
-    file_count = serializers.SerializerMethodField()
-    total_file_size = serializers.SerializerMethodField()
+    """Сериализатор пользователя для админов с информацией о файлах"""
+    file_count = serializers.IntegerField()
+    total_file_size = serializers.IntegerField()
 
     class Meta:
         model = CustomUser
-        fields = ['id', 'username', 'email', 'is_admin', 'file_count', 'total_file_size']
-
-    def get_file_count(self, obj):
-        return obj.files.count()  # Количество файлов у пользователя
-
-    def get_total_file_size(self, obj):
-        result = obj.files.aggregate(total_size=Sum('size'))
-        return result['total_size'] or 0  # Общий размер файлов
+        fields = ['id', 'username', 'email', 'full_name', 'is_admin', 'file_count', 'total_file_size']
 
 
 class RegisterSerializer(serializers.ModelSerializer):
