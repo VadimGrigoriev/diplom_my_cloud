@@ -14,6 +14,11 @@ class CustomUser(AbstractUser):
         verbose_name = "Пользователь"
         verbose_name_plural = "Пользователи"
 
+    def save(self, *args, **kwargs):
+        if self.is_superuser:
+            self.is_admin = True
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return self.username
 
