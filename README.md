@@ -60,7 +60,7 @@ My Cloud – это веб-приложение для облачного хра
 ---
    
 ### **2.2. Настройка базы данных**
-База данных настраивается в **PostgreSQL**.
+База данных настраивается в **PostgreSQL**, а данные соединения хранятся в файле **`.env`**.
 
 1. Откройте терминал и выполните команду для входа в PostgreSQL:
    ```sh
@@ -82,17 +82,16 @@ My Cloud – это веб-приложение для облачного хра
    ```sql
    GRANT ALL PRIVILEGES ON DATABASE my_cloud_db TO my_cloud_user;
    ```
-5. Настройте соединение в `config/settings.py`:
-   ```python
-   DATABASES = {
-       'default': {
-           'ENGINE': 'django.db.backends.postgresql',
-           'NAME': 'my_cloud_db',
-           'USER': 'my_cloud_user',
-           'PASSWORD': 'your_password',
-           'HOST': 'localhost',
-       }
-   }
+5. Создайте файл `.env` в корневой папке проекта и укажите настройки:
+   ```
+   SECRET_KEY=your-secret-key
+   DEBUG=True
+   ALLOWED_HOSTS=localhost,127.0.0.1
+   
+   DATABASE_NAME=my_cloud_db
+   DATABASE_USER=my_cloud_user
+   DATABASE_PASSWORD=your_password
+   DATABASE_HOST=127.0.0.1
    ```
 6. Примените миграции для создания таблиц:
    ```sh
